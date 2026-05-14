@@ -4,7 +4,26 @@ import { isAuthenticated, getUser, logout } from './api';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import FeaturePage from './pages/FeaturePage';
+import AIInsightsPage from './pages/AIInsightsPage';
+import AIBacklogPage from './pages/AIBacklogPage';
 
+// // === Batch 06 Gaps & Frontend Mounts ===
+import CFAutonomousNetworkOptimizationPage from './pages/CFAutonomousNetworkOptimizationPage';
+import CFCostAnomalyDetectionPage from './pages/CFCostAnomalyDetectionPage';
+import CFMultilingualSupportAgentPage from './pages/CFMultilingualSupportAgentPage';
+import CFRoamingConsortiumAdvisorPage from './pages/CFRoamingConsortiumAdvisorPage';
+import CFComplianceAutomationPage from './pages/CFComplianceAutomationPage';
+import GapExistingStubFilesSentimentIntentdetectionTranPage from './pages/GapExistingStubFilesSentimentIntentdetectionTranPage';
+import GapNetworkMonitoringWithoutNetworkPage from './pages/GapNetworkMonitoringWithoutNetworkPage';
+import GapBillingWithoutCostPage from './pages/GapBillingWithoutCostPage';
+import GapCustomersWithoutChurnPage from './pages/GapCustomersWithoutChurnPage';
+import GapNoRealPage from './pages/GapNoRealPage';
+import GapNoSlaTrackingAndBreachAlertingPage from './pages/GapNoSlaTrackingAndBreachAlertingPage';
+import GapNoAutomatedBillingDisputeResolutionPage from './pages/GapNoAutomatedBillingDisputeResolutionPage';
+import GapLimitedCustomerSelfPage from './pages/GapLimitedCustomerSelfPage';
+import GapNoIntegrationsWithMajorCloudProvidersAwsAzuPage from './pages/GapNoIntegrationsWithMajorCloudProvidersAwsAzuPage';
+import GapNoWebhooksForExternalSystemEventsPage from './pages/GapNoWebhooksForExternalSystemEventsPage';
+import GapNoFileUploadForInvoiceContractDocsPage from './pages/GapNoFileUploadForInvoiceContractDocsPage';
 const FEATURES = [
   { key: 'customers', label: 'Customer Management', icon: '👥', endpoint: '/api/customers', category: 'core',
     desc: 'Manage customers across all regions with data residency compliance',
@@ -277,6 +296,14 @@ function Sidebar({ currentPath, onNavigate, user }) {
           <span className="icon">{f.icon}</span> {f.label}
         </button>
       ))}
+      <button className={`sidebar-link ${currentPath === '/ai-insights' ? 'active' : ''}`}
+        onClick={() => onNavigate('/ai-insights')}>
+        <span className="icon">🧠</span> AI Insights
+      </button>
+      <button className={`sidebar-link ${currentPath === '/ai-backlog' ? 'active' : ''}`}
+        onClick={() => onNavigate('/ai-backlog')}>
+        <span className="icon">🧰</span> AI Backlog
+      </button>
       <div className="sidebar-user">
         <div className="user-name">{user?.name || 'User'}</div>
         <div className="user-role">{user?.role || 'operator'} | {user?.country || 'Global'}</div>
@@ -302,7 +329,25 @@ function AppContent() {
     return (
       <Routes>
         <Route path="*" element={<Login onLogin={() => { setUser(getUser()); navigate('/'); }} />} />
-      </Routes>
+      
+          {/* // === Batch 06 Gaps & Frontend Mounts === */}
+          <Route path="/cf-autonomous-network-optimization" element={<CFAutonomousNetworkOptimizationPage />} />
+          <Route path="/cf-cost-anomaly-detection" element={<CFCostAnomalyDetectionPage />} />
+          <Route path="/cf-multilingual-support-agent" element={<CFMultilingualSupportAgentPage />} />
+          <Route path="/cf-roaming-consortium-advisor" element={<CFRoamingConsortiumAdvisorPage />} />
+          <Route path="/cf-compliance-automation" element={<CFComplianceAutomationPage />} />
+          <Route path="/gap-existing-stub-files-sentiment-intentdetection-tran" element={<GapExistingStubFilesSentimentIntentdetectionTranPage />} />
+          <Route path="/gap-network-monitoring-without-network" element={<GapNetworkMonitoringWithoutNetworkPage />} />
+          <Route path="/gap-billing-without-cost" element={<GapBillingWithoutCostPage />} />
+          <Route path="/gap-customers-without-churn" element={<GapCustomersWithoutChurnPage />} />
+          <Route path="/gap-no-real" element={<GapNoRealPage />} />
+          <Route path="/gap-no-sla-tracking-and-breach-alerting" element={<GapNoSlaTrackingAndBreachAlertingPage />} />
+          <Route path="/gap-no-automated-billing-dispute-resolution" element={<GapNoAutomatedBillingDisputeResolutionPage />} />
+          <Route path="/gap-limited-customer-self" element={<GapLimitedCustomerSelfPage />} />
+          <Route path="/gap-no-integrations-with-major-cloud-providers-aws-azu" element={<GapNoIntegrationsWithMajorCloudProvidersAwsAzuPage />} />
+          <Route path="/gap-no-webhooks-for-external-system-events" element={<GapNoWebhooksForExternalSystemEventsPage />} />
+          <Route path="/gap-no-file-upload-for-invoice-contract-docs" element={<GapNoFileUploadForInvoiceContractDocsPage />} />
+        </Routes>
     );
   }
 
@@ -315,6 +360,8 @@ function AppContent() {
           {FEATURES.map(f => (
             <Route key={f.key} path={`/feature/${f.key}`} element={<FeaturePage feature={f} />} />
           ))}
+          <Route path="/ai-insights" element={<AIInsightsPage />} />
+          <Route path="/ai-backlog" element={<AIBacklogPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
