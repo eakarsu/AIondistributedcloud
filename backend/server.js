@@ -55,6 +55,12 @@ app.use('/api/gap-no-integrations-with-major-cloud-providers-aws-azu', require('
 app.use('/api/gap-no-webhooks-for-external-system-events', require('./routes/gapFeat_no_webhooks_for_external_system_events'));
 app.use('/api/gap-no-file-upload-for-invoice-contract-docs', require('./routes/gapFeat_no_file_upload_for_invoice_contract_docs'));
 
+// === Custom Views (cloud) — mounted BEFORE any 404 handler ===
+app.use('/api/custom-views', require('./routes/customViews'));
+
+// 404 fallback for unknown /api routes
+app.use('/api/*', (req, res) => res.status(404).json({ error: 'Not found', path: req.originalUrl }));
+
 app.listen(PORT, () => {
   console.log(`Backend server running on port ${PORT}`);
 });

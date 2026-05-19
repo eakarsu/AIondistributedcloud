@@ -24,6 +24,7 @@ import GapLimitedCustomerSelfPage from './pages/GapLimitedCustomerSelfPage';
 import GapNoIntegrationsWithMajorCloudProvidersAwsAzuPage from './pages/GapNoIntegrationsWithMajorCloudProvidersAwsAzuPage';
 import GapNoWebhooksForExternalSystemEventsPage from './pages/GapNoWebhooksForExternalSystemEventsPage';
 import GapNoFileUploadForInvoiceContractDocsPage from './pages/GapNoFileUploadForInvoiceContractDocsPage';
+import CustomViewsPage from './pages/CustomViewsPage';
 const FEATURES = [
   { key: 'customers', label: 'Customer Management', icon: '👥', endpoint: '/api/customers', category: 'core',
     desc: 'Manage customers across all regions with data residency compliance',
@@ -304,6 +305,10 @@ function Sidebar({ currentPath, onNavigate, user }) {
         onClick={() => onNavigate('/ai-backlog')}>
         <span className="icon">🧰</span> AI Backlog
       </button>
+      <button className={`sidebar-link ${currentPath === '/custom-views' ? 'active' : ''}`}
+        onClick={() => onNavigate('/custom-views')}>
+        <span className="icon">☁️</span> Cloud Views
+      </button>
       <div className="sidebar-user">
         <div className="user-name">{user?.name || 'User'}</div>
         <div className="user-role">{user?.role || 'operator'} | {user?.country || 'Global'}</div>
@@ -362,6 +367,7 @@ function AppContent() {
           ))}
           <Route path="/ai-insights" element={<AIInsightsPage />} />
           <Route path="/ai-backlog" element={<AIBacklogPage />} />
+          <Route path="/custom-views" element={<CustomViewsPage />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>

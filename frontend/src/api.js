@@ -1,4 +1,8 @@
-const API_BASE = 'http://localhost:3001/api';
+// Compute backend base. If REACT_APP_BACKEND_URL env is set, use it.
+// Otherwise default to localhost:3001 (legacy) but allow override at runtime via window.__BACKEND_URL.
+const API_BASE = (typeof window !== 'undefined' && window.__BACKEND_URL)
+  ? `${window.__BACKEND_URL}/api`
+  : (process.env.REACT_APP_BACKEND_URL ? `${process.env.REACT_APP_BACKEND_URL}/api` : 'http://localhost:3001/api');
 
 function getToken() {
   return localStorage.getItem('token');
