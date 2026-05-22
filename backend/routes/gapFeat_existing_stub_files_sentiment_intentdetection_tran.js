@@ -6,7 +6,7 @@
 
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const auth = require('../middleware/auth').authenticateToken;
 const aiRateLimiter = null;
 let _pool = null; try { _pool = require('../schema').pool; } catch (_) { try { _pool = require('../db').pool; } catch (_) {} }
 

@@ -25,6 +25,11 @@ import GapNoIntegrationsWithMajorCloudProvidersAwsAzuPage from './pages/GapNoInt
 import GapNoWebhooksForExternalSystemEventsPage from './pages/GapNoWebhooksForExternalSystemEventsPage';
 import GapNoFileUploadForInvoiceContractDocsPage from './pages/GapNoFileUploadForInvoiceContractDocsPage';
 import CustomViewsPage from './pages/CustomViewsPage';
+import CodexCustomVizFeature from './pages/CodexCustomVizFeature';
+import CodexOperationsFeature from './pages/CodexOperationsFeature';
+
+import TimelineView from './pages/TimelineView';
+
 const FEATURES = [
   { key: 'customers', label: 'Customer Management', icon: '👥', endpoint: '/api/customers', category: 'core',
     desc: 'Manage customers across all regions with data residency compliance',
@@ -333,6 +338,10 @@ function AppContent() {
   if (!isAuthenticated()) {
     return (
       <Routes>
+        <Route path="/insights/timeline" element={<TimelineView />} />
+        <Route path="/codex/custom-viz" element={<CodexCustomVizFeature />} />
+        <Route path="/codex/operations" element={<CodexOperationsFeature />} />
+
         <Route path="*" element={<Login onLogin={() => { setUser(getUser()); navigate('/'); }} />} />
       
           {/* // === Batch 06 Gaps & Frontend Mounts === */}
