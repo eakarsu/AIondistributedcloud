@@ -1,66 +1,16 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config({ path: '../.env' });
-
-const app = express();
-const PORT = process.env.BACKEND_PORT || 3001;
-
-app.use(cors());
-app.use(express.json({ limit: '10mb' }));
-
-// Routes
+'use strict';
+const express = require('express'); const cors = require('cors'); require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
+const pool = require('./db'); const { authenticateToken } = require('./middleware/auth'); const app = express(); const PORT = Number(process.env.BACKEND_PORT || 3001);
+const testMode = process.env.NODE_ENV === 'test';
+if (testMode && !process.env.ALLOWED_ORIGINS) process.env.ALLOWED_ORIGINS = `http://127.0.0.1:${process.env.FRONTEND_PORT || 3000}`;
+if (testMode && !process.env.CLOUD_WEBHOOK_SECRET) process.env.CLOUD_WEBHOOK_SECRET = process.env.JWT_SECRET;
+const origins = (process.env.ALLOWED_ORIGINS || '').split(',').map(x => x.trim()).filter(Boolean); if (!origins.length) throw new Error('ALLOWED_ORIGINS is required');
+if (!process.env.CLOUD_WEBHOOK_SECRET || process.env.CLOUD_WEBHOOK_SECRET.length < 32) throw new Error('CLOUD_WEBHOOK_SECRET must be at least 32 characters');
+app.use(cors({ origin: origins, credentials: true })); app.use(express.json({ limit: '2mb', verify: (req, _res, buffer) => { req.rawBody = buffer; } }));
+app.get('/api/health', async (_req, res) => { try { await pool.query('SELECT 1'); res.json({ status: 'ok' }); } catch { res.status(503).json({ status: 'unready' }); } });
 app.use('/api/auth', require('./routes/auth'));
-app.use('/api/customers', require('./routes/customers'));
-app.use('/api/data-zones', require('./routes/dataZones'));
-app.use('/api/billing', require('./routes/billing'));
-app.use('/api/tickets', require('./routes/tickets'));
-app.use('/api/network', require('./routes/network'));
-app.use('/api/sim-cards', require('./routes/simCards'));
-app.use('/api/roaming', require('./routes/roaming'));
-app.use('/api/compliance', require('./routes/compliance'));
-app.use('/api/audit', require('./routes/audit'));
-app.use('/api/translations', require('./routes/translation'));
-app.use('/api/sentiment', require('./routes/sentiment'));
-app.use('/api/ai-support', require('./routes/aiSupport'));
-app.use('/api/intent-detection', require('./routes/intentDetection'));
-app.use('/api/compliance-reports', require('./routes/complianceReport'));
-app.use('/api/ai', require('./routes/ai'));
-// Apply pass 5 — backlog routes (SLA, dashboard, clouds, self-service, disputes)
-app.use('/api/ai', require('./routes/aiBacklog'));
-
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-
-// === Custom Feature Mounts (batch_06) ===
-app.use('/api/cf-autonomous-network-optimization', require('./routes/customFeat01_AutonomousNetworkOptimization'));
-app.use('/api/cf-cost-anomaly-detection', require('./routes/customFeat02_CostAnomalyDetection'));
-app.use('/api/cf-multilingual-support-agent', require('./routes/customFeat03_MultilingualSupportAgent'));
-app.use('/api/cf-roaming-consortium-advisor', require('./routes/customFeat04_RoamingConsortiumAdvisor'));
-app.use('/api/cf-compliance-automation', require('./routes/customFeat05_ComplianceAutomation'));
-
-
-// === Batch 06 Gaps & Frontend Mounts ===
-app.use('/api/gap-existing-stub-files-sentiment-intentdetection-tran', require('./routes/gapFeat_existing_stub_files_sentiment_intentdetection_tran'));
-app.use('/api/gap-network-monitoring-without-network', require('./routes/gapFeat_network_monitoring_without_network'));
-app.use('/api/gap-billing-without-cost', require('./routes/gapFeat_billing_without_cost'));
-app.use('/api/gap-customers-without-churn', require('./routes/gapFeat_customers_without_churn'));
-app.use('/api/gap-no-real', require('./routes/gapFeat_no_real'));
-app.use('/api/gap-no-sla-tracking-and-breach-alerting', require('./routes/gapFeat_no_sla_tracking_and_breach_alerting'));
-app.use('/api/gap-no-automated-billing-dispute-resolution', require('./routes/gapFeat_no_automated_billing_dispute_resolution'));
-app.use('/api/gap-limited-customer-self', require('./routes/gapFeat_limited_customer_self'));
-app.use('/api/gap-no-integrations-with-major-cloud-providers-aws-azu', require('./routes/gapFeat_no_integrations_with_major_cloud_providers_aws_azu'));
-app.use('/api/gap-no-webhooks-for-external-system-events', require('./routes/gapFeat_no_webhooks_for_external_system_events'));
-app.use('/api/gap-no-file-upload-for-invoice-contract-docs', require('./routes/gapFeat_no_file_upload_for_invoice_contract_docs'));
-
-// === Custom Views (cloud) — mounted BEFORE any 404 handler ===
-app.use('/api/custom-views', require('./routes/customViews'));
-
-// 404 fallback for unknown /api routes
-app.use('/api/*', (req, res) => res.status(404).json({ error: 'Not found', path: req.originalUrl }));
-
-app.listen(PORT, () => {
-  console.log(`Backend server running on port ${PORT}`);
-});
+app.use('/api/authoritative/cloud', authenticateToken, require('./routes/authoritative'));
+app.use('/api', authenticateToken, (_req, res) => res.status(410).json({ error: 'legacy_route_quarantined', replacement: '/api/authoritative/cloud' }));
+app.use((err, _req, res, _next) => { console.error(err.message); const status = /missing_|required|invalid_|unsupported|mismatch/.test(err.message) ? 422 : /scope_denied/.test(err.message) ? 403 : 500; res.status(status).json({ error: status === 500 ? 'internal_error' : err.message }); });
+async function start() { const ready = await pool.query("SELECT to_regclass('cloud_workflow_runs') AS table_name"); if (!ready.rows[0].table_name) throw new Error('Database migration missing; run npm run migrate'); app.listen(PORT, () => console.log(`cloud workflow API listening on ${PORT}`)); }
+if (require.main === module) start().catch(error => { console.error(error.message); process.exit(1); }); module.exports = { app, start };

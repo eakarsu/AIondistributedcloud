@@ -1,0 +1,16 @@
+'use strict';
+const test = require('node:test'); const assert = require('node:assert/strict');
+const p = require('../domain/cloudWorkflow');
+const run = () => ({ repository: 'org/repo', commitSha: 'abc', workflowVersion: 'v1', datasetVersion: 'd1', requestedRegions: ['us-east'], secretRefs: ['secret://ci/token'], sandbox: { network: 'deny', secrets: 'scoped' }, steps: [{ effect: 'read' }] });
+test('validates deterministic run', () => assert.equal(p.validateRun(run()).state, 'validated'));
+test('write requires approval', () => assert.throws(() => p.validateRun({ ...run(), steps: [{ effect: 'write' }] }), /approval_required/));
+test('sandbox fails closed', () => assert.throws(() => p.validateRun({ ...run(), sandbox: {} }), /secure_sandbox/));
+test('approval is independent', () => assert.throws(() => p.transition('approval_pending', 'approved', { requesterId: 'a', approverId: 'a' }), /independent/));
+test('placement is deterministic', () => assert.equal(p.choosePlacement([{ provider: 'b', capacity: 2, regions: ['r'], cost: 2, reliability: .99 }, { provider: 'a', capacity: 2, regions: ['r'], cost: 1, reliability: .9 }], { capacity: 1, region: 'r' }).provider, 'a'));
+test('scope rejects cross tenant', () => assert.throws(() => p.requireScope({ tenantId: 'b', role: 'admin' }, 'a', 'read'), /tenant_scope/));
+test('receipt binds payload', () => assert.throws(() => p.providerDelivery('aws', { a: 1 }, 'i', { payloadHash: 'bad' }), /payload_mismatch/));
+test('evaluation identifies regressions', () => assert.deepEqual(p.evaluate({ latency: 11, cost: 2 }, { latency: 10, cost: 3 }).failures, ['latency']));
+test('evaluation handles minimum reliability thresholds', () => assert.deepEqual(p.evaluate({ reliability: .9 }, { reliability: { direction: 'min', value: .95 } }).failures, ['reliability']));
+test('evaluation fails closed on incomplete benchmark evidence', () => assert.throws(() => p.evaluate({}, { latency: 10 }), /complete_numeric_benchmark/));
+test('health transition requires provider evidence', () => assert.throws(() => p.transition('deploying', 'healthy', { healthCheckPassed: true }), /confirmed_provider_receipt/));
+test('unknown providers fail before queueing', () => assert.throws(() => p.providerDelivery('generic', {}, 'i'), /unsupported_provider/));

@@ -21,16 +21,17 @@ router.post('/login', async (req, res) => {
     if (!validPassword) {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
+    if (!user.tenant_id) return res.status(403).json({ error: 'Account has not been assigned to a tenant' });
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, role: user.role, country: user.country },
+      { id: user.id, email: user.email, role: user.role, country: user.country, tenantId: user.tenant_id },
       JWT_SECRET,
       { expiresIn: '24h' }
     );
 
     res.json({
       token,
-      user: { id: user.id, email: user.email, name: user.name, role: user.role, country: user.country },
+      user: { id: user.id, email: user.email, name: user.name, role: user.role, country: user.country, tenantId: user.tenant_id },
     });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -44,7 +45,7 @@ router.get('/me', async (req, res) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    const result = await pool.query('SELECT id, email, name, role, country FROM users WHERE id = $1', [decoded.id]);
+    const result = await pool.query('SELECT id, email, name, role, country, tenant_id FROM users WHERE id = $1 AND tenant_id = $2', [decoded.id, decoded.tenantId]);
     res.json(result.rows[0]);
   } catch {
     res.status(403).json({ error: 'Invalid token' });

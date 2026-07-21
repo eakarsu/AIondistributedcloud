@@ -36,6 +36,7 @@ async function seed() {
       password_hash VARCHAR(255) NOT NULL,
       role VARCHAR(50) DEFAULT 'operator',
       country VARCHAR(100),
+      tenant_id TEXT NOT NULL DEFAULT 'default-tenant',
       created_at TIMESTAMP DEFAULT NOW()
     );
 
@@ -245,7 +246,11 @@ async function seed() {
   `);
 
   console.log('Seeding users...');
-  const hash = await bcrypt.hash('password123', 10);
+  const demoPassword = process.env.DEMO_PASSWORD || process.env.SEED_DEMO_PASSWORD;
+  if (!demoPassword || demoPassword.length < 12) {
+    throw new Error('An explicit 12+ character demo password is required');
+  }
+  const hash = await bcrypt.hash(demoPassword, 10);
   await pool.query(`
     INSERT INTO users (name, email, password_hash, role, country) VALUES
     ('Admin User', 'admin@telecom.com', $1, 'admin', 'Global'),
@@ -551,6 +556,11 @@ async function seed() {
 
   console.log('Seed completed successfully!');
   await pool.end();
+}
+
+if (process.env.ALLOW_DEMO_SEED !== 'true') {
+  console.error('Demo seed refused; set ALLOW_DEMO_SEED=true explicitly.');
+  process.exit(64);
 }
 
 seed().catch((err) => {
