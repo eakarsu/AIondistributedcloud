@@ -36,7 +36,7 @@ export default function Login({ onLogin }) {
         </div>
         {error && <div className="login-error">{error}</div>}
         <button className="btn btn-autofill btn-full" onClick={handleAutoFill}>
-          Auto-Fill Demo Credentials
+          Auto Fill Demo Credentials
         </button>
         <form onSubmit={handleSubmit}>
           <div className="form-group">
