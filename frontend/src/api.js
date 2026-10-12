@@ -45,7 +45,9 @@ export function isAuthenticated() {
 export async function api(endpoint, method = 'GET', body = null) {
   const opts = { method, headers: headers() };
   if (body) opts.body = JSON.stringify(body);
-  const res = await fetch(`${API_BASE}${endpoint}`, opts);
+  // Feature definitions already include /api; API_BASE does too.
+  const path = endpoint.startsWith('/api/') ? endpoint.slice(4) : endpoint;
+  const res = await fetch(`${API_BASE}${path}`, opts);
   if (res.status === 401 || res.status === 403) {
     logout();
     window.location.href = '/';

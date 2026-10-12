@@ -11,6 +11,15 @@ app.get('/api/health', async (_req, res) => { try { await pool.query('SELECT 1')
 app.use('/api/auth', require('./routes/auth'));
 app.use('/api/authoritative/cloud', authenticateToken, require('./routes/authoritative'));
 app.use('/api/runtime-ai', authenticateToken, require('./routes/runtimeAi'));
+
+// Advisory AI reports only; native execution and approval routes stay unchanged.
+const aiWorkspaceSupport = require("./aiWorkspaceAdapters.cjs");
+const aiWorkspaceDatabase = require("./db.js");
+app.use('/api/report-workspace', require("./aiWorkspace.cjs").createAIWorkspaceRouter({
+  pool: aiWorkspaceDatabase, authenticateToken: require("./middleware/auth.js").authenticateToken,
+  aiRateLimiter: aiWorkspaceSupport.createWorkspaceLimiter(), features: require("./aiWorkspaceFeatures.json"),
+}));
+app.use('/api/ai', require('./routes/ai'));
 app.use('/api', authenticateToken, (_req, res) => res.status(410).json({ error: 'legacy_route_quarantined', replacement: '/api/authoritative/cloud' }));
 app.use((err, _req, res, _next) => { console.error(err.message); const status = /missing_|required|invalid_|unsupported|mismatch/.test(err.message) ? 422 : /scope_denied/.test(err.message) ? 403 : 500; res.status(status).json({ error: status === 500 ? 'internal_error' : err.message }); });
 async function start() { const ready = await pool.query("SELECT to_regclass('cloud_workflow_runs') AS table_name"); if (!ready.rows[0].table_name) throw new Error('Database migration missing; run npm run migrate'); app.listen(PORT, () => console.log(`cloud workflow API listening on ${PORT}`)); }

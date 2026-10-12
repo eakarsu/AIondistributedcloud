@@ -8,8 +8,15 @@ export default function Login({ onLogin }) {
   const [loading, setLoading] = useState(false);
 
   const handleAutoFill = () => {
-    setEmail(process.env.REACT_APP_DEMO_EMAIL || '');
-    setPassword(process.env.REACT_APP_DEMO_PASSWORD || '');
+    const demoEmail = process.env.REACT_APP_DEMO_EMAIL;
+    const demoPassword = process.env.REACT_APP_DEMO_PASSWORD;
+    if (!demoEmail || !demoPassword) {
+      setError('Demo credentials are not configured for this app. Ask an administrator for access.');
+      return;
+    }
+    setError('');
+    setEmail(demoEmail);
+    setPassword(demoPassword);
   };
 
   const handleSubmit = async (e) => {
@@ -35,8 +42,8 @@ export default function Login({ onLogin }) {
           <p>Multinational Data Residency Platform</p>
         </div>
         {error && <div className="login-error">{error}</div>}
-        <button className="btn btn-autofill btn-full" onClick={handleAutoFill}>
-          Auto Fill Demo Credentials
+        <button type="button" className="btn btn-autofill btn-full" onClick={handleAutoFill} disabled={loading}>
+          Fill Demo Credentials
         </button>
         <form onSubmit={handleSubmit}>
           <div className="form-group">

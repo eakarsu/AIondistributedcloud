@@ -1,7 +1,10 @@
+
+import FullAIExamples, { useFullAIExamples } from "../components/FullAIExamples.jsx";
 // Apply pass 5 — backlog UI for AIondistributedcloud
 // Surfaces /api/ai/sla, /clouds, /self-service, /disputes, /network/dashboard.
 import React, { useState } from 'react';
 import { api } from '../api';
+import AIReport from '../components/AIReport';
 
 const TABS = [
   { id: 'sla',          label: 'SLA Thresholds & Breach' },
@@ -12,6 +15,8 @@ const TABS = [
 ];
 
 export default function AIBacklogPage() {
+  const fullAIExamples = useFullAIExamples();
+
   const [tab, setTab] = useState('sla');
   const [loading, setLoading] = useState(false);
   const [out, setOut] = useState(null);
@@ -26,12 +31,12 @@ export default function AIBacklogPage() {
   const [slaObs, setSlaObs] = useState('{"packet_loss_pct": 2.5, "latency_ms": 80}');
 
   // Self-service
-  const [ssCust, setSsCust] = useState('1');
+  const [ssCust, setSsCust] = useState('');
   const [ssSubj, setSsSubj] = useState('Outage in zone EU-1');
   const [ssBody, setSsBody] = useState('We are experiencing intermittent connectivity in zone EU-1.');
 
   // Dispute
-  const [dsCust, setDsCust] = useState('1');
+  const [dsCust, setDsCust] = useState('');
   const [dsText, setDsText] = useState('I was overcharged $42 for data roaming on April invoice.');
 
   const wrap = async (fn) => {
@@ -42,7 +47,7 @@ export default function AIBacklogPage() {
   };
 
   return (
-    <div className="page">
+    <div className="page" data-full-ai-workspace="AIBacklogPage"><FullAIExamples controller={fullAIExamples} disabled={Boolean(loading)} />
       <h1>AI Backlog Tools</h1>
       <p style={{ color: '#888' }}>Apply pass 5 features. Cloud integrations gated behind credentials (return 503).</p>
 
@@ -59,13 +64,13 @@ export default function AIBacklogPage() {
         <div className="card" style={{ padding: 12 }}>
           <h3>SLA thresholds</h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6, marginBottom: 8 }}>
-            <input value={slaCustId} onChange={(e) => setSlaCustId(e.target.value)} placeholder="customer_id (opt)" />
-            <input value={slaMetric} onChange={(e) => setSlaMetric(e.target.value)} placeholder="metric" />
-            <input type="number" value={slaThr} onChange={(e) => setSlaThr(parseFloat(e.target.value))} placeholder="threshold" />
-            <select value={slaCmp} onChange={(e) => setSlaCmp(e.target.value)}>
+            <input value={slaCustId} onChange={(e) => setSlaCustId(e.target.value)} placeholder="customer_id (opt)" data-full-ai-field={fullAIExamples.bind({ current: slaCustId, change: (e) => setSlaCustId(e.target.value), label: "slaCustId", reference: true, sample: '' }, "p1-2419", undefined)} />
+            <input value={slaMetric} onChange={(e) => setSlaMetric(e.target.value)} placeholder="metric" data-full-ai-field={fullAIExamples.bind({ current: slaMetric, change: (e) => setSlaMetric(e.target.value), label: "slaMetric", manual: false, json: false, sample: 'packet_loss_pct' }, "p1-2538", undefined)} />
+            <input type="number" value={slaThr} onChange={(e) => setSlaThr(parseFloat(e.target.value))} placeholder="threshold" data-full-ai-field={fullAIExamples.bind({ current: slaThr, change: (e) => setSlaThr(parseFloat(e.target.value)), label: "slaThr", manual: false, json: false, sample: 1 }, "p1-2646", undefined)} />
+            <select value={slaCmp} onChange={(e) => setSlaCmp(e.target.value)} data-full-ai-field={fullAIExamples.bind({ current: slaCmp, change: (e) => setSlaCmp(e.target.value), label: "slaCmp", manual: false, json: false, sample: 'gt' }, "p1-2777", undefined)}>
               <option>lt</option><option>lte</option><option>gt</option><option>gte</option><option>eq</option>
             </select>
-            <select value={slaSev} onChange={(e) => setSlaSev(e.target.value)}>
+            <select value={slaSev} onChange={(e) => setSlaSev(e.target.value)} data-full-ai-field={fullAIExamples.bind({ current: slaSev, change: (e) => setSlaSev(e.target.value), label: "slaSev", manual: false, json: false, sample: 'high' }, "p1-2991", undefined)}>
               <option>low</option><option>medium</option><option>high</option><option>critical</option>
             </select>
           </div>
@@ -76,7 +81,7 @@ export default function AIBacklogPage() {
             <button className="btn btn-secondary btn-sm" disabled={loading} onClick={() => wrap(() => api('/ai/sla/thresholds'))}>List</button>
           </div>
           <h4 style={{ marginTop: 12 }}>Check observations</h4>
-          <textarea value={slaObs} onChange={(e) => setSlaObs(e.target.value)} rows={4} style={{ width: '100%' }} />
+          <textarea value={slaObs} onChange={(e) => setSlaObs(e.target.value)} rows={4} style={{ width: '100%' }} data-full-ai-field={fullAIExamples.bind({ current: slaObs, change: (e) => setSlaObs(e.target.value), label: "slaObs", manual: false, json: false, sample: '{"packet_loss_pct": 2.5, "latency_ms": 80}' }, "p1-3812", undefined)} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button className="btn btn-primary btn-sm" disabled={loading} onClick={() => {
               let parsed; try { parsed = JSON.parse(slaObs); } catch { setErr('Invalid JSON'); return; }
@@ -111,10 +116,10 @@ export default function AIBacklogPage() {
         <div className="card" style={{ padding: 12 }}>
           <h3>Customer self-service</h3>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 6, marginBottom: 8 }}>
-            <input value={ssCust} onChange={(e) => setSsCust(e.target.value)} placeholder="customer_id" />
-            <input value={ssSubj} onChange={(e) => setSsSubj(e.target.value)} placeholder="subject" />
+            <input value={ssCust} onChange={(e) => setSsCust(e.target.value)} placeholder="customer_id" data-full-ai-field={fullAIExamples.bind({ current: ssCust, change: (e) => setSsCust(e.target.value), label: "ssCust", reference: true, sample: '' }, "p1-6080", undefined)} />
+            <input value={ssSubj} onChange={(e) => setSsSubj(e.target.value)} placeholder="subject" data-full-ai-field={fullAIExamples.bind({ current: ssSubj, change: (e) => setSsSubj(e.target.value), label: "ssSubj", manual: false, json: false, sample: 'Outage in zone EU-1' }, "p1-6187", undefined)} />
           </div>
-          <textarea value={ssBody} onChange={(e) => setSsBody(e.target.value)} rows={3} style={{ width: '100%' }} />
+          <textarea value={ssBody} onChange={(e) => setSsBody(e.target.value)} rows={3} style={{ width: '100%' }} data-full-ai-field={fullAIExamples.bind({ current: ssBody, change: (e) => setSsBody(e.target.value), label: "ssBody", manual: false, json: false, sample: 'We are experiencing intermittent connectivity in zone EU-1.' }, "p1-6305", undefined)} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button className="btn btn-secondary btn-sm" disabled={loading} onClick={() => wrap(() => api(`/ai/self-service/summary?customer_id=${ssCust}`))}>Get summary</button>
             <button className="btn btn-primary btn-sm" disabled={loading} onClick={() => wrap(() => api('/ai/self-service/ticket', 'POST', { customer_id: parseInt(ssCust, 10), subject: ssSubj, body: ssBody, priority: 'normal' }))}>Open ticket</button>
@@ -125,8 +130,8 @@ export default function AIBacklogPage() {
       {tab === 'disputes' && (
         <div className="card" style={{ padding: 12 }}>
           <h3>Dispute proposals (AI advises, human approves)</h3>
-          <input value={dsCust} onChange={(e) => setDsCust(e.target.value)} placeholder="customer_id" style={{ width: '100%', marginBottom: 6 }} />
-          <textarea value={dsText} onChange={(e) => setDsText(e.target.value)} rows={4} style={{ width: '100%' }} />
+          <input value={dsCust} onChange={(e) => setDsCust(e.target.value)} placeholder="customer_id" style={{ width: '100%', marginBottom: 6 }} data-full-ai-field={fullAIExamples.bind({ current: dsCust, change: (e) => setDsCust(e.target.value), label: "dsCust", reference: true, sample: '' }, "p1-7113", undefined)} />
+          <textarea value={dsText} onChange={(e) => setDsText(e.target.value)} rows={4} style={{ width: '100%' }} data-full-ai-field={fullAIExamples.bind({ current: dsText, change: (e) => setDsText(e.target.value), label: "dsText", manual: false, json: false, sample: 'I was overcharged $42 for data roaming on April invoice.' }, "p1-7261", undefined)} />
           <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
             <button className="btn btn-primary btn-sm" disabled={loading} onClick={() => wrap(() => api('/ai/disputes/propose', 'POST', { customer_id: parseInt(dsCust, 10), dispute_text: dsText }))}>Propose</button>
             <button className="btn btn-secondary btn-sm" disabled={loading} onClick={() => wrap(() => api('/ai/disputes'))}>List proposals</button>
@@ -135,7 +140,7 @@ export default function AIBacklogPage() {
       )}
 
       {err && <div style={{ marginTop: 16, padding: 12, background: '#7f1d1d', color: '#fecaca', borderRadius: 4 }}>{err}</div>}
-      {out && <pre style={{ marginTop: 16, padding: 12, background: '#1f2937', color: '#e5e7eb', borderRadius: 4, maxHeight: 480, overflow: 'auto' }}>{JSON.stringify(out, null, 2)}</pre>}
+      {out !== null && <AIReport response={out} title="AI backlog result" />}
     </div>
   );
 }

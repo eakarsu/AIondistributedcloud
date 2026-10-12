@@ -1,5 +1,29 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { api } from '../api';
+import { AIReportContent } from '../components/AIReport';
+
+const aiScenarios = [
+  { name: 'Network outage', country: 'Germany', person: 'Maya Chen', message: 'Our Berlin site has had intermittent connectivity since 09:00. Please explain the likely cause and the next diagnostic step.', scope: 'Berlin network service and customer communications', period: 'October 2026' },
+  { name: 'Billing question', country: 'Brazil', person: 'Rafael Costa', message: 'The latest invoice includes a roaming charge that I do not recognize. Please review the likely explanation and next steps.', scope: 'Brazil billing and roaming controls', period: 'September 2026' },
+  { name: 'Compliance review', country: 'Japan', person: 'Aiko Tanaka', message: 'Please summarize the data residency controls for our Tokyo deployment and identify evidence the audit team should review.', scope: 'Tokyo data residency and access controls', period: 'Q3 2026' },
+];
+
+function aiPreset(feature, current, index) {
+  const scenario = aiScenarios[index];
+  return Object.fromEntries(feature.fields.map((field) => {
+    const key = field.name;
+    if (/(?:^|_)(?:id|reference|file|upload)(?:$|_)/i.test(key)) return [key, current[key]];
+    if (key === 'source_language') return [key, 'English'];
+    if (key === 'target_language') return [key, ['German', 'Portuguese', 'Japanese'][index]];
+    if (field.type === 'select') return [key, field.options[index % field.options.length]];
+    if (key === 'country') return [key, scenario.country];
+    if (key === 'customer_name') return [key, scenario.person];
+    if (key === 'period') return [key, scenario.period];
+    if (key === 'scope') return [key, scenario.scope];
+    if (field.type === 'number') return [key, [12, 24, 36][index]];
+    return [key, scenario.message];
+  }));
+}
 
 function formatValue(val) {
   if (val === null || val === undefined) return '-';
@@ -62,7 +86,7 @@ function AIResultDisplay({ data, feature }) {
               lineHeight: 1.7,
               borderLeft: s.highlight ? '4px solid #8b5cf6' : 'none',
               whiteSpace: 'pre-wrap',
-            }}>{s.content || '-'}</div>
+            }}><AIReportContent value={s.content ?? ''} /></div>
           </div>
         ))}
 
@@ -132,8 +156,14 @@ function DetailView({ item, feature, onClose, onDelete, onEdit }) {
                   <label>{key.replace(/_/g, ' ')}</label>
                   {isStatus ? (
                     <StatusBadge value={item[key]} />
+                  ) : isLong && feature.isAI ? (
+                    <AIReportContent value={item[key]} />
                   ) : isLong ? (
                     <div className="value" style={{ whiteSpace: 'pre-wrap', background: '#f8fafc', padding: 12, borderRadius: 8, fontSize: 13 }}>{formatValue(item[key])}</div>
+                  ) : isJson && feature.isAI ? (
+                    <AIReportContent value={item[key]} />
+                  ) : feature.isAI && (typeof item[key] === 'object' || /^[\s]*[\[{]/.test(String(item[key]))) ? (
+                    <AIReportContent value={item[key]} />
                   ) : (
                     <div className="value">{formatValue(item[key])}</div>
                   )}
@@ -203,6 +233,7 @@ function FormModal({ feature, item, onClose, onSave }) {
                 This will use AI (OpenRouter) to process your request. Results will be generated automatically.
               </div>
             )}
+            {feature.isAI && <div className="ai-preset-bar"><strong>Fill all fields</strong><div className="ai-actions">{aiScenarios.map((scenario, index) => <button key={scenario.name} type="button" className="btn btn-secondary" disabled={loading} onClick={() => setFormData(aiPreset(feature, formData, index))}>{scenario.name}</button>)}</div></div>}
             {feature.fields.map(f => (
               <div key={f.name} className="form-group">
                 <label>{f.label} {f.required && '*'}</label>
@@ -242,6 +273,7 @@ export default function FeaturePage({ feature }) {
   const [showForm, setShowForm] = useState(false);
   const [editItem, setEditItem] = useState(null);
   const [toast, setToast] = useState(null);
+  const [loadError, setLoadError] = useState('');
 
   const showToast = (message, type = 'success') => {
     setToast({ message, type });
@@ -250,10 +282,15 @@ export default function FeaturePage({ feature }) {
 
   const loadItems = useCallback(async () => {
     setLoading(true);
+    setLoadError('');
     try {
       const data = await api(feature.endpoint);
-      setItems(data);
+      const rows = Array.isArray(data) ? data : data?.data;
+      if (!Array.isArray(rows)) throw new Error('The records response did not contain a list.');
+      setItems(rows);
     } catch (err) {
+      setItems([]);
+      setLoadError(err.message);
       showToast(err.message, 'error');
     } finally {
       setLoading(false);
@@ -316,6 +353,8 @@ export default function FeaturePage({ feature }) {
       {loading ? (
         <div className="loading"><div className="spinner" /> Loading...</div>
       ) : (
+        <>
+        {loadError && <div role="alert" className="login-error">Unable to load records: {loadError}</div>}
         <div className="data-table-wrapper">
           <table className="data-table">
             <thead>
@@ -349,6 +388,7 @@ export default function FeaturePage({ feature }) {
             Showing {items.length} records
           </div>
         </div>
+        </>
       )}
 
       {selectedItem && (
